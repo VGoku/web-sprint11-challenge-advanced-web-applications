@@ -6,25 +6,28 @@ const initialFormValues = {
   password: '',
 }
 export default function LoginForm(props) {
-  const [values, setValues] = useState(initialFormValues)
-  // ✨ where are my props? Destructure them here
+  const [values, setValues] = useState(initialFormValues);
+  const { login } = props; // Destructure the login function from props
 
   const onChange = evt => {
-    const { id, value } = evt.target
-    setValues({ ...values, [id]: value })
-  }
+    const { id, value } = evt.target;
+    setValues({ ...values, [id]: value });
+  };
 
   const onSubmit = evt => {
-    evt.preventDefault()
-    // ✨ implement
-  }
+    evt.preventDefault();
+    // Call the login function with the form values
+    login(values);
+  };
 
   const isDisabled = () => {
-    // ✨ implement
     // Trimmed username must be >= 3, and
     // trimmed password must be >= 8 for
     // the button to become enabled
-  }
+    const trimmedUsername = values.username.trim();
+    const trimmedPassword = values.password.trim();
+    return trimmedUsername.length < 3 || trimmedPassword.length < 8;
+  };
 
   return (
     <form id="loginForm" onSubmit={onSubmit}>
@@ -45,7 +48,7 @@ export default function LoginForm(props) {
       />
       <button disabled={isDisabled()} id="submitCredentials">Submit credentials</button>
     </form>
-  )
+  );
 }
 
 // 🔥 No touchy: LoginForm expects the following props exactly:

@@ -30,7 +30,7 @@ export default function App() {
     // using the helper above.
   const logout = () => {
   // Remove the token from local storage
-  localStorage.removeItem('authToken');
+  localStorage.removeItem('token');
 
   // Set the message to "Goodbye!"
   setMessage('Goodbye!');
