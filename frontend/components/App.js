@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { NavLink, Routes, Route, useNavigate } from 'react-router-dom'
 import Articles from './Articles'
 import LoginForm from './LoginForm'
@@ -60,22 +60,22 @@ export default function App() {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ username, password }),
   })
-    .then(response => {
-      if (!response.ok) throw new Error('Network response was not ok');
-      return response.json();
-    })
-    .then(data => {
-      const { token, message } = data;
-      localStorage.setItem('token', token);
-      setMessage(message);
-      redirectToArticles();
-    })
-    .catch(error => {
-      console.error('Login failed:', error);
-      setMessage('Login failed. Please try again.');
-    })
-    .finally(() => setSpinnerOn(false));
-  }
+  .then(response => {
+    if (!response.ok) throw new Error('Network response was not ok');
+    return response.json();
+  })
+  .then(data => {
+    const { token, message } = data;
+    localStorage.setItem('token', token);
+    setMessage(message);
+    redirectToArticles();
+  })
+  .catch(error => {
+    console.error('Login failed:', error);
+    setMessage('Login failed. Please try again.');
+  })
+  .finally(() => setSpinnerOn(false));
+};
 
 
 
@@ -99,25 +99,27 @@ export default function App() {
         'Authorization': `Bearer ${token}`,
       },
     })
-      .then(response => {
-        if (!response.ok) {
-          if (response.status === 401) redirectToLogin();
-          throw new Error('Network response was not ok');
+    .then(response => {
+      if (!response.ok) {
+        if (response.status === 401) {
+          // Token has expired or is invalid
+          redirectToLogin();
         }
-        return response.json();
-      })
-      .then(data => {
-        const { articles, message } = data;
-        setArticles(articles);
-        setMessage(message);
-      })
-      .catch(error => {
-        console.error('Failed to get articles:', error);
-        if (error.message.includes('401')) redirectToLogin();
-        else setMessage('Failed to get articles. Please try again.');
-      })
-      .finally(() => setSpinnerOn(false));
-  }
+        throw new Error('Network response was not ok');
+      }
+      return response.json();
+    })
+    .then(data => {
+      const { articles, message } = data;
+      setArticles(articles);
+      setMessage(message);
+    })
+    .catch(error => {
+      console.error('Failed to get articles:', error);
+      setMessage('Failed to get articles. Please try again.');
+    })
+    .finally(() => setSpinnerOn(false));
+  };
 
 
 
@@ -146,6 +148,7 @@ export default function App() {
       .then(data => {
         const { message } = data;
         setMessage(message);
+        setArticles([...articles, data.article]);
       })
       .catch(error => {
         console.error('Failed to post article:', error);
@@ -178,6 +181,15 @@ export default function App() {
       }
       return response.json();
     })
+    .then(response => {
+      if (!response.ok) {
+        if (response.status === 401) {
+          redirectToLogin();
+        }
+        throw new Error('Network response was not ok');
+      }
+      return response.json();
+    })
     .then(data => {
       const { message, article: updatedArticle } = data;
       setMessage(message);
@@ -187,8 +199,11 @@ export default function App() {
     })
     .catch(error => {
       console.error('Failed to update article:', error);
-      if (error.message.includes('401')) redirectToLogin();
-      else setMessage('Failed to update article. Please try again.');
+      if (error.message.includes('401')) {
+        redirectToLogin();
+      } else {
+        setMessage('Failed to update article. Please try again.');
+      }
     })
     .finally(() => setSpinnerOn(false));
 
@@ -230,7 +245,7 @@ export default function App() {
      <Message message={message} />
       <button id="logout" onClick={logout}>Logout from app</button>
       <div id="wrapper" style={{ opacity: spinnerOn ? "0.25" : "1" }}> {/* <-- do not change this line */}
-        <h1>Advanced Web Applications</h1>
+        <h1>My Whatever this is.</h1>
         <nav>
           <NavLink id="loginScreen" to="/">Login</NavLink>
           <NavLink id="articlesScreen" to="/articles">Articles</NavLink>
@@ -259,3 +274,4 @@ export default function App() {
     </>
   )
 }
+
