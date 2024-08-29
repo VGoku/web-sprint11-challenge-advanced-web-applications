@@ -9,11 +9,11 @@ export default function ArticleForm(props) {
   const { postArticle, updateArticle, setCurrentArticleId, currentArticle } = props; // Destructure props
 
 
-
       // ✨ implement
     // Every time the `currentArticle` prop changes, we should check it for truthiness:
     // if it's truthy, we should set its title, text and topic into the corresponding
     // values of the form. If it's not, we should reset the form back to initial values.
+    // Debugging: log when useEffect runs and the values it receives
   useEffect(() => {
     if (currentArticle) {
       setValues({
@@ -24,33 +24,39 @@ export default function ArticleForm(props) {
     } else {
       setValues(initialFormValues);
     }
-  }, [currentArticle]);
+  }, [currentArticle]); // Ensure currentArticle is in the dependency array
 
   const onChange = evt => {
-    const { id, value } = evt.target
-    setValues({ ...values, [id]: value })
-  }
+    const { id, value } = evt.target;
+    setValues({ ...values, [id]: value });
+  };
 
 
   // ✨ implement
     // We must submit a new post or update an existing one,
     // depending on the truthyness of the `currentArticle` prop.
-  const onSubmit = evt => {
-    evt.preventDefault()
-    if (currentArticle) {
-      updateArticle({ article_id: currentArticle.article_id, article: values });
-    } else {
-      postArticle(values);
-    }
-    setCurrentArticleId(null); // Reset the form after submission
-  }
+    const onSubmit = evt => {
+      evt.preventDefault();
+      if (currentArticle) {
+        updateArticle(values);
+      } else {
+        postArticle(values);
+      }
+      setValues(initialFormValues);
+      setCurrentArticleId(null); // Clear after submission
+    };
 
 
    // ✨ implement
     // Make sure the inputs have some values
   const isDisabled = () => {
-    return values.title.trim() === '' || values.text.trim() === '' || values.topic.trim() === '';
-  }
+    return !(values.title.trim() && values.text.trim() && values.topic.trim());
+  };
+
+  const cancelEdit = () => {
+    setCurrentArticleId(null);
+    setValues(initialFormValues);
+  };
 
   return (
     // ✨ fix the JSX: make the heading display either "Edit" or "Create"
@@ -79,11 +85,11 @@ export default function ArticleForm(props) {
       </select>
       <div className="button-group">
         <button disabled={isDisabled()} id="submitArticle">Submit</button>
-        <button onClick={() => setCurrentArticleId(null)}>{currentArticle ? 'Cancel edit' : 'Clear form'}</button>
+        <button type="button" onClick={cancelEdit}>Cancel edit</button>
       </div>
     </form>
-  )
-}
+  );
+};
 
 // 🔥 No touchy: ArticleForm expects the following props exactly:
 ArticleForm.propTypes = {
@@ -97,3 +103,5 @@ ArticleForm.propTypes = {
     topic: PT.string.isRequired,
   })
 }
+
+

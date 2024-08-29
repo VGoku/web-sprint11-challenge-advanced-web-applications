@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { NavLink, Routes, Route, useNavigate } from 'react-router-dom'
 import Articles from './Articles'
 import LoginForm from './LoginForm'
@@ -11,16 +11,16 @@ const loginUrl = 'http://localhost:9000/api/login'
 
 export default function App() {
   // ✨ MVP can be achieved with these states
-  const [message, setMessage] = useState('')
-  const [articles, setArticles] = useState([])
-  const [currentArticleId, setCurrentArticleId] = useState()
-  const [spinnerOn, setSpinnerOn] = useState(false)
+  const [message, setMessage] = useState('');
+  const [articles, setArticles] = useState([]);
+  const [currentArticleId, setCurrentArticleId] = useState();
+  const [spinnerOn, setSpinnerOn] = useState(false);
 
   // ✨ Research `useNavigate` in React Router v.6
   const navigate = useNavigate()
   const redirectToLogin = () => { navigate('/');/* ✨ implement */ }
   const redirectToArticles = () => { navigate('/articles');/* ✨ implement */ }
-
+  
 
 
    // ✨ implement
@@ -57,24 +57,23 @@ export default function App() {
   // Launch a request to the proper endpoint
   fetch(loginUrl, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+    },
     body: JSON.stringify({ username, password }),
   })
-  .then(response => {
-    if (!response.ok) throw new Error('Network response was not ok');
-    return response.json();
-  })
-  .then(data => {
-    const { token, message } = data;
-    localStorage.setItem('token', token);
-    setMessage(message);
-    redirectToArticles();
-  })
-  .catch(error => {
-    console.error('Login failed:', error);
-    setMessage('Login failed. Please try again.');
-  })
-  .finally(() => setSpinnerOn(false));
+    .then(response => response.json())
+    .then(data => {
+      console.log(data)
+      localStorage.setItem('token', data.token);
+      setMessage(data.message);
+      setSpinnerOn(false);
+      redirectToArticles();
+    })
+    .catch(error => {
+      setMessage('Login failed.');
+      setSpinnerOn(false);
+    });
 };
 
 
@@ -87,156 +86,132 @@ export default function App() {
     // If something goes wrong, check the status of the response:
     // if it's a 401 the token might have gone bad, and we should redirect to login.
     // Don't forget to turn off the spinner!
-  const getArticles = async () => {
-    setMessage("")
-    setSpinnerOn(true)
-    const token = localStorage.getItem("token")
+    const getArticles = () => {
+      // Implement the functionality with fetch
+      setSpinnerOn(true); // Turn on the spinner
+      setMessage(""); // Flush the message state
 
-    fetch(articlesUrl, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-    })
-    .then(response => {
-      if (!response.ok) {
-        if (response.status === 401) {
-          // Token has expired or is invalid
-          redirectToLogin();
-        }
-        throw new Error('Network response was not ok');
-      }
-      return response.json();
-    })
-    .then(data => {
-      const { articles, message } = data;
-      setArticles(articles);
-      setMessage(message);
-    })
-    .catch(error => {
-      console.error('Failed to get articles:', error);
-      setMessage('Failed to get articles. Please try again.');
-    })
-    .finally(() => setSpinnerOn(false));
-  };
-
-
+      const token = localStorage.getItem("token");
+    
+      fetch(articlesUrl, {
+        headers: {
+          Authorization: token,
+        },
+      })
+        .then(response => response.json())
+        .then(data => {
+          setArticles(data.articles);
+          setMessage(data.message);
+          setSpinnerOn(false);
+        })
+        .catch(error => {
+          if (error.status === 401) {
+            redirectToLogin();
+          } else {
+            setMessage('Failed to fetch articles.');
+          }
+          setSpinnerOn(false);
+        });
+    };
 
   // ✨ implement
     // The flow is very similar to the `getArticles` function.
     // You'll know what to do! Use log statements or breakpoints
     // to inspect the response from the server.
-  const postArticle = async article => {
-    setMessage("")
-    setSpinnerOn(true)
-
-    const token = localStorage.getItem("token")
-
-    fetch(articlesUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify(article),
-    })
-      .then(response => {
-        if (!response.ok) throw new Error('Network response was not ok');
-        return response.json();
+    const postArticle = article => {
+      setMessage('');
+      setSpinnerOn(true);
+  
+      const token = localStorage.getItem('token');
+  
+      fetch(articlesUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: token,
+        },
+        body: JSON.stringify(article),
       })
-      .then(data => {
-        const { message } = data;
-        setMessage(message);
-        setArticles([...articles, data.article]);
-      })
-      .catch(error => {
-        console.error('Failed to post article:', error);
-        if (error.message.includes('401')) redirectToLogin();
-        else setMessage('Failed to post article. Please try again.');
-      })
-      .finally(() => setSpinnerOn(false));
-  }
+        .then(response => response.json())
+        .then(data => {
+          setArticles([...articles, data.article]);
+          setMessage(data.message);
+          setSpinnerOn(false);
+        })
+        .catch(error => {
+          setMessage('Failed to post article.');
+          setSpinnerOn(false);
+        });
+    };
 
 
    // ✨ implement
     // You got this!
-  const updateArticle = async ({ article_id, article }) => {
-   setMessage()
-   setSpinnerOn(true)
-   const token = localStorage.getItem('token');
+    const updateArticle = (article) => {
+      setMessage('');
+      setSpinnerOn(true);
+    
+      const token = localStorage.getItem('token');
+    
+      fetch(`${articlesUrl}/${currentArticleId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: token,
+        },
+        body: JSON.stringify(article),
+      })
+        .then(response => response.json())
+        .then(data => {
+          console.log('Update successful, response:', data);
+  
+          // Update the state with the edited article
+          setArticles(prevArticles => 
+            prevArticles.map(a => 
+              a.article_id === currentArticleId ? data.article : a
+            )
+          );
+  
+          setMessage(data.message);
+          setSpinnerOn(false);
+          setCurrentArticleId(null); // Clear after update
+        })
+        .catch(error => {
+          setMessage('Failed to update article.');
+          setSpinnerOn(false);
+        });
+    };
 
-   fetch(`${articlesUrl}/${article_id}`, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`,
-    },
-    body: JSON.stringify(article),
-  })
-    .then(response => {
-      if (!response.ok) {
-        if (response.status === 401) redirectToLogin();
-        throw new Error('Network response was not ok');
-      }
-      return response.json();
-    })
-    .then(response => {
-      if (!response.ok) {
-        if (response.status === 401) {
-          redirectToLogin();
-        }
-        throw new Error('Network response was not ok');
-      }
-      return response.json();
-    })
-    .then(data => {
-      const { message, article: updatedArticle } = data;
-      setMessage(message);
-      setArticles(prevArticles =>
-        prevArticles.map(a => a.id === article_id ? updatedArticle : a)
-      );
-    })
-    .catch(error => {
-      console.error('Failed to update article:', error);
-      if (error.message.includes('401')) {
-        redirectToLogin();
-      } else {
-        setMessage('Failed to update article. Please try again.');
-      }
-    })
-    .finally(() => setSpinnerOn(false));
-
-  }
-
-  const deleteArticle = async article_id => {
+  const deleteArticle = async currentArticleId => {
     // ✨ implement
     setMessage('');
     setSpinnerOn(true);
 
     const token = localStorage.getItem('token');
 
-    fetch(`${articlesUrl}/${article_id}`, {
+    fetch(`${articlesUrl}/${currentArticleId}`, {
       method: 'DELETE',
-      headers: { 'Authorization': `Bearer ${token}` },
+      headers: {
+        Authorization: token,
+      },
     })
       .then(response => {
-        if (response.ok) {
-          setMessage('Article deleted successfully');
-          setArticles(prevArticles =>
-            prevArticles.filter(art => art.id !== article_id)
-          );
-        } else if (response.status === 401) {
-          redirectToLogin();
-        } else {
-          return response.json().then(data => {
-            setMessage(data.message || 'Failed to delete article');
-          });
+        if (!response.ok) {
+          throw new Error('Failed to delete article');
         }
+        return response.json();
       })
-      .catch(() => setMessage('An error occurred'))
-      .finally(() => setSpinnerOn(false));
-  }
+      .then(data => {
+        setArticles(prevArticles => prevArticles.filter(a => a.id = !currentArticleId));
+        setMessage(data.message);
+        setSpinnerOn(false);
+      })
+      .catch(error => {
+        setMessage('Failed to delete article.');
+        setSpinnerOn(false);
+        console.error('Delete error:', error);
+      });
+  };
 
   return (
     // ✨ fix the JSX: `Spinner`, `Message`, `LoginForm`, `ArticleForm` and `Articles` expect props ❗
@@ -274,4 +249,3 @@ export default function App() {
     </>
   )
 }
-
